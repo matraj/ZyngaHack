@@ -344,6 +344,9 @@
 				LastUpgradeCheck = 0500;
 				ORGANIZATIONNAME = "Alexis Creuzot";
 				TargetAttributes = {
+					82C6A08E18A6F53400FEBE9B = {
+						DevelopmentTeam = 839RWU9N23;
+					};
 					82C6A0AF18A6F53400FEBE9B = {
 						TestTargetID = 82C6A08E18A6F53400FEBE9B;
 					};
@@ -548,6 +551,7 @@
 				GCC_PREFIX_HEADER = "spritybird/Supporting Files/spritybird-Prefix.pch";
 				INFOPLIST_FILE = "spritybird/Supporting Files/spritybird-Info.plist";
 				IPHONEOS_DEPLOYMENT_TARGET = 7.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.alexiscreuzot.spritybirdMat;
 				PRODUCT_NAME = spritybird;
 				TARGETED_DEVICE_FAMILY = 1;
 				WRAPPER_EXTENSION = app;
@@ -564,6 +568,7 @@
 				GCC_PREFIX_HEADER = "spritybird/Supporting Files/spritybird-Prefix.pch";
 				INFOPLIST_FILE = "spritybird/Supporting Files/spritybird-Info.plist";
 				IPHONEOS_DEPLOYMENT_TARGET = 7.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.alexiscreuzot.spritybirdMat;
 				PRODUCT_NAME = spritybird;
 				TARGETED_DEVICE_FAMILY = 1;
 				WRAPPER_EXTENSION = app;

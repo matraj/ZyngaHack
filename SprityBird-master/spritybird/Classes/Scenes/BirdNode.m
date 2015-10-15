@@ -55,7 +55,12 @@ static bool goingUp = false;
         }
         
         float displacement = (goingUp)? VERTICAL_SPEED : -VERTICAL_SPEED;
-        self.position = CGPointMake(self.position.x, self.position.y + displacement);
+        //if(self.position.x > 0.5*[[UIScreen mainScreen] bounds].size.width) {
+        //    self.position = CGPointMake(0.75*[[UIScreen mainScreen] bounds].size.width, self.position.y + displacement);
+        //} else {
+            self.position = CGPointMake(self.position.x, self.position.y + displacement);
+        //}
+        
         deltaPosY += displacement;
     }
     
@@ -73,13 +78,22 @@ static bool goingUp = false;
     [self removeActionForKey:@"flapForever"];
 }
 
-- (void) bounce:(int)angle
+- (void) bounce:(CGPoint)touchPoint
 {
+    double xTouchPoint = touchPoint.x - self.position.x;
+    double yTouchPoint = [[UIScreen mainScreen] bounds].size.height - touchPoint.y - self.position.y;
+    double angle = atan(yTouchPoint/xTouchPoint);
+    if(xTouchPoint < 0) {
+        angle = M_PI + angle;
+    }
     
     [self.physicsBody setVelocity:CGVectorMake(0, 0)];
-    
-    int flyVector = 40;
-    [self.physicsBody applyImpulse:CGVectorMake(10, 40)];
+    //[self.physicsBody applyImpulse:CGVectorMake(-40*cos(angle), -40*sin(angle) + 10)];
+    if(xTouchPoint > 0 || self.position.x < 0.5*[[UIScreen mainScreen] bounds].size.width) {
+        [self.physicsBody applyImpulse:CGVectorMake(-40*cos(angle), -40*sin(angle) + 10)];
+    } else {
+        [self.physicsBody applyImpulse:CGVectorMake(0, -40*sin(angle) + 10)];
+    }
     [self runAction:self.flap];
 }
 

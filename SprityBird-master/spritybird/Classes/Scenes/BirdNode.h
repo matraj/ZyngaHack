@@ -9,5 +9,5 @@
 @interface BirdNode : SKSpriteNode
 - (void) update:(NSUInteger) currentTime;
 - (void) startPlaying;
-- (void) bounce:(int) angle;
+- (void) bounce:(CGPoint) touchPoint;
 @end

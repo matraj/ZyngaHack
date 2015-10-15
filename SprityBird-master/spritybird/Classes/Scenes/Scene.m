@@ -25,6 +25,7 @@
     SKScrollingNode * back;
     SKLabelNode * scoreLabel;
     BirdNode * bird;
+    BirdNode * bird2;
     
     int nbObstacles;
     NSMutableArray * topPipes;
@@ -32,6 +33,7 @@
 }
 
 static bool wasted = NO;
+double floorScrollingSpeed = 3;
 
 - (id)initWithSize:(CGSize)size {
     if (self = [super initWithSize:size]) {
@@ -56,6 +58,7 @@ static bool wasted = NO;
     
     // Floor needs to be in front of tubes
     floor.zPosition = bird.zPosition + 1;
+    floor.zPosition = bird2.zPosition + 1;
     
     if([self.delegate respondsToSelector:@selector(eventStart)]){
         [self.delegate eventStart];
@@ -90,7 +93,7 @@ static bool wasted = NO;
 - (void)createFloor
 {
     floor = [SKScrollingNode scrollingNodeWithImageNamed:@"floor" inContainerWidth:WIDTH(self)];
-    [floor setScrollingSpeed:FLOOR_SCROLLING_SPEED];
+    [floor setScrollingSpeed:floorScrollingSpeed];
     [floor setAnchorPoint:CGPointZero];
     [floor setName:@"floor"];
     [floor setPhysicsBody:[SKPhysicsBody bodyWithEdgeLoopFromRect:floor.frame]];
@@ -102,9 +105,14 @@ static bool wasted = NO;
 - (void)createBird
 {
     bird = [BirdNode new];
-    [bird setPosition:CGPointMake(100, CGRectGetMidY(self.frame))];
+    [bird setPosition:CGPointMake(CGRectGetMidX(self.frame), CGRectGetMidY(self.frame))];
     [bird setName:@"bird"];
     [self addChild:bird];
+    
+    bird2 = [BirdNode new];
+    [bird2 setPosition:CGPointMake(CGRectGetMidX(self.frame), CGRectGetMidY(self.frame))];
+    [bird2 setName:@"bird"];
+    [self addChild:bird2];
 }
 
 - (void) createObstacles
@@ -145,16 +153,59 @@ static bool wasted = NO;
     if(wasted){
         [self startGame];
     }else{
+        
+        // bird 1
         if (!bird.physicsBody) {
             [bird startPlaying];
             if([self.delegate respondsToSelector:@selector(eventPlay)]){
                 [self.delegate eventPlay];
             }
         }
-        //UITouch.
-        //UITouch *touch = event.allTouches.anyObject;
-        //touch.
-        [bird bounce:0];
+        
+        UITouch *touch = event.allTouches.anyObject;
+        CGPoint touchPoint = [touch locationInView:touch.view];
+        double xTouchPoint = touchPoint.x - bird.position.x;
+        double yTouchPoint = [[UIScreen mainScreen] bounds].size.height - touchPoint.y - bird.position.y;
+        double angle = atan(yTouchPoint/xTouchPoint);
+        if(xTouchPoint < 0.0) {
+            angle = M_PI + angle;
+        }
+        if(xTouchPoint > 0.0 || bird.position.x < 0.5*[[UIScreen mainScreen] bounds].size.width) {
+            floorScrollingSpeed = 3;
+            [floor setScrollingSpeed:floorScrollingSpeed];
+        } else {
+            floorScrollingSpeed = 3 - 3*cos(angle);
+            [floor setScrollingSpeed:floorScrollingSpeed];
+        }
+
+        [bird bounce:touchPoint];
+        
+        
+        //bird 2
+        if (!bird2.physicsBody) {
+            [bird2 startPlaying];
+            if([self.delegate respondsToSelector:@selector(eventPlay)]){
+                [self.delegate eventPlay];
+            }
+        }
+        
+        //touch = event.allTouches.anyObject;
+        //touchPoint = [touch locationInView:touch.view];
+        //xTouchPoint = touchPoint.x - bird2.position.x;
+        //yTouchPoint = [[UIScreen mainScreen] bounds].size.height - touchPoint.y - bird2.position.y;
+        //angle = atan(yTouchPoint/xTouchPoint);
+        //if(xTouchPoint < 0) {
+        //    angle = M_PI + angle;
+        //}
+        /*if(xTouchPoint > 0.0 || bird2.position.x < 0.5*[[UIScreen mainScreen] bounds].size.width) {
+            floorScrollingSpeed = 3;
+            [floor setScrollingSpeed:floorScrollingSpeed];
+        } else {
+            floorScrollingSpeed = 3 - 3*cos(angle);
+            [floor setScrollingSpeed:floorScrollingSpeed];
+        }*/
+        
+        //[bird2 bounce:touchPoint];
     }
 }
 
@@ -173,6 +224,7 @@ static bool wasted = NO;
     
     // Other
     [bird update:currentTime];
+    [bird2 update:currentTime];
     [self updateObstacles:currentTime];
     [self updateScore:currentTime];
 }
@@ -180,7 +232,7 @@ static bool wasted = NO;
 
 - (void) updateObstacles:(NSTimeInterval)currentTime
 {
-    if(!bird.physicsBody){
+    if(!bird.physicsBody || !bird2.physicsBody){
         return;
     }
     
@@ -197,8 +249,8 @@ static bool wasted = NO;
         }
         
         // Move according to the scrolling speed
-        topPipe.position = CGPointMake(X(topPipe) - FLOOR_SCROLLING_SPEED, Y(topPipe));
-        bottomPipe.position = CGPointMake(X(bottomPipe) - FLOOR_SCROLLING_SPEED, Y(bottomPipe));
+        topPipe.position = CGPointMake(X(topPipe) - floorScrollingSpeed, Y(topPipe));
+        bottomPipe.position = CGPointMake(X(bottomPipe) - floorScrollingSpeed, Y(bottomPipe));
     }
 }
 
@@ -234,7 +286,7 @@ static bool wasted = NO;
         
         // Score, adapt font size
         if(X(topPipe) + WIDTH(topPipe)/2 > bird.position.x &&
-           X(topPipe) + WIDTH(topPipe)/2 < bird.position.x + FLOOR_SCROLLING_SPEED){
+           X(topPipe) + WIDTH(topPipe)/2 < bird.position.x + floorScrollingSpeed){
             self.score +=1;
             scoreLabel.text = [NSString stringWithFormat:@"%lu",self.score];
             if(self.score>=10){
@@ -250,12 +302,14 @@ static bool wasted = NO;
 - (void)didBeginContact:(SKPhysicsContact *)contact
 {
     if(wasted){ return; }
-
-    wasted = true;
-    [Score registerScore:self.score];
     
-    if([self.delegate respondsToSelector:@selector(eventWasted)]){
-        [self.delegate eventWasted];
+    if(contact.bodyA == bird.physicsBody || contact.bodyB == bird.physicsBody) {
+        wasted = true;
+        [Score registerScore:self.score];
+    
+        if([self.delegate respondsToSelector:@selector(eventWasted)]){
+            [self.delegate eventWasted];
+        }
     }
 }
 @end
